@@ -1,0 +1,62 @@
+courses = {
+    'mar2012': {'p1': {'name': 'Programmierung I',
+                       'author': 'N.N.',
+                       'teacher': 'Loose'},
+                'p2': {'name': 'Programmierung II',
+                       'teacher': 'Loose',
+                       'author': 'N.N.',
+                       'prereq': 'p1'},
+                'db': {'name': 'Datenbanken',
+                       'teacher': 'Preuss',
+                       'author': 'Li'}},
+    'sep2012': {'oosl': {'name': 'OO Skriptsprachen',
+                         'teacher': 'Preuss'},
+                'db': {'name': 'Datenbanken',
+                       'teacher': 'Preuss',
+                       'author': 'Li'}},
+    'sep2014': {'nosql': {'name': 'NoSQL Datenbanken',
+                          'teacher': 'Edlich'}}
+}
+
+
+def is_offered(courses, course_name, date):
+    return courses[date].has_key(course_name)
+
+
+def when_offered(courses, course_name):
+    course_dates = []
+    for key in courses:
+        if course_name in courses[key]:
+            course_dates.append(key)
+    return course_dates
+
+
+def involved(courses, teacher_name):
+    course_list = {}
+
+    for current_date in courses:
+        courses_in_month = []
+        for course_id in courses[current_date]:
+            print course_id
+            print "Zeil 39"+ str(courses[current_date][course_id]['teacher'])
+            flag = 0
+            if  courses[current_date][course_id]['teacher'] == teacher_name:
+               courses_in_month.append(course_id )
+               flag = 1
+        if flag:
+            course_list[current_date] = courses_in_month
+
+
+    return course_list
+
+
+print involved(courses, 'Preuss')  # =>{'mar2012': ['db'], 'sep2012': ['oosl', 'db']}
+
+#print is_offered(courses, 'p1',                 'mar2012')  # exp: true
+
+# print is_offered(courses, 'drb',                 'mar2012')  # exp: false
+
+
+# print is_offered(courses, 'p1',                 'sep2014')  # exp false
+
+# print when_offered(courses, 'db')  # =>['mar2012', 'sep2012']
