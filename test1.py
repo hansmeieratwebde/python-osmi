@@ -23,3 +23,5 @@ def median(a, b, c):
 
 
 print median(1.0, 2, 31)
+usd = lambda eur: eur * 1.8
+print usd (1000)
