@@ -30,10 +30,10 @@ class crud_ops():
             entry_data)
         self.__connection.commit()
 
-    def update_entry(self, entry_id, data):
-        """TODO: """
+    def update_entry(self, entry_id, entry_data):
+        self.__cursor.execute('''UPDATE my_log SET entry_name =:entry_name, entry_time = :entry_time WHERE id=?''',(entry_data, entry_id) )
 
-        return
+
 
     def read_entry(self, entry_id):
             self.__cursor.execute('''SELECT  * FROM my_log WHERE id = ?''', (entry_id,))
@@ -52,8 +52,10 @@ class crud_ops():
 
 test_data = {'entry_name': 'Sven', 'entry_comment': 'Hallo Welt', 'entry_time': '12:20', 'entry_email': 'scen@dfg.de',
              'entry_date': '150505'}
-
+update_test = {'entry-name': 'Plönx', 'entry_date': '030303'}
 my_crud_ops = crud_ops()
 #my_crud_ops.create_entry(test_data)
 my_crud_ops.print_table()
-print my_crud_ops.read_entry(3)
+print (my_crud_ops.read_entry(3))
+my_crud_ops.update_entry(1, update_test)
+my_crud_ops.print_table()
