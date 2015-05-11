@@ -55,7 +55,7 @@ class crud_ops():
 
 
 
-.repository import Gtk
+
 
 #list of tuples for each software, containing the software name, initial release, and main programming languages used
 software_list = [("Firefox", 2002,  "C++"),
