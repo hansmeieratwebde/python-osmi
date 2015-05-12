@@ -43,7 +43,7 @@ class MyWindow(Gtk.ApplicationWindow):
             # and it is appended to the treeview
             view.append_column(col)
 
-        # when a row is selected, it emits a signal
+        # when a row is selected, it emits a signali in
         view.get_selection().connect("changed", self.on_changed)
 
         # the label we use to show the selection
@@ -54,6 +54,7 @@ class MyWindow(Gtk.ApplicationWindow):
         grid = Gtk.Grid()
         grid.attach(view, 0, 0, 1, 1)
         grid.attach(self.label, 0, 1, 1, 1)
+
 
         # attach the grid to the window
         self.add(grid)
