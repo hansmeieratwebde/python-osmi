@@ -60,14 +60,14 @@ class MyWindow(Gtk.ApplicationWindow):
         self.label.set_placeholder_text("")
 
         # a grid to attach the widgets
-        grid = Gtk.Grid()
-        grid.attach(view, 0, 0, 1, 1)
-        grid.attach(self.label, 0, 1, 1, 1)
+        self.grid= Gtk.Grid()
+        self.grid.attach(view, 0, 0, 1, 1)
+        self.grid.attach(self.label, 0, 1, 1, 1)
 
         # attach the grid to the window
-        self.add(grid)
+        self.add(self.grid)
 
-        self.show_input_form(grid,2)
+        self.show_input_form(2)
 
 
     def on_changed(self, selection):
@@ -78,7 +78,7 @@ class MyWindow(Gtk.ApplicationWindow):
                             (model[iter][0]))
         return True
 
-    def show_input_form(self, grid, id):
+    def show_input_form(self,  id):
         #adjust id to fit index starting at 0
         index = id -1
         columns = self.db.get_column_names()
@@ -91,7 +91,7 @@ class MyWindow(Gtk.ApplicationWindow):
             form = Gtk.Entry()
             form.set_text(str(table_content[index][i]))
             box.pack_start(form, True, True, 0)
-            grid.attach(box, 0, 2 + i, 1, 1)
+            self.grid.attach(box, 0, 2 + i, 1, 1)
 
 
 class crud_ops():
