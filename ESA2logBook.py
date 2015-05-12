@@ -62,20 +62,21 @@ class MyWindow(Gtk.ApplicationWindow):
         # a grid to attach the widgets
         self.grid= Gtk.Grid()
         self.grid.attach(view, 0, 0, 1, 1)
-        self.grid.attach(self.label, 0, 1, 1, 1)
+        #self.grid.attach(self.label, 0, 1, 1, 1)
 
         # attach the grid to the window
         self.add(self.grid)
 
-        self.show_input_form(2)
+        boxes=self.show_input_form(2)
+        self.grid.attach(boxes[1],1,3,1,1)
 
 
     def on_changed(self, selection):
         # get the model and the iterator that points at the data in the model
         (model, iter) = selection.get_selected()
         # set the label to a new value depending on the selection
-        self.label.set_text("\n %s " %
-                            (model[iter][0]))
+        input_boxes = self.show_input_form(2)
+        input_boxes[0].form.set_text("'Zack")
         return True
 
     def show_input_form(self,  id):
@@ -83,15 +84,18 @@ class MyWindow(Gtk.ApplicationWindow):
         index = id -1
         columns = self.db.get_column_names()
         table_content = self.db.read_table()
+        input_boxes = []
         for i in range(1,len(columns)):
-            box = Gtk.Box(spacing=6)
+
+            box= Gtk.Box(spacing=6)
             box.set_homogeneous(True)
             label = Gtk.Label(columns[i])
             box.pack_start(label, True, True, 0)
             form = Gtk.Entry()
             form.set_text(str(table_content[index][i]))
             box.pack_start(form, True, True, 0)
-            self.grid.attach(box, 0, 2 + i, 1, 1)
+            input_boxes.append(box)
+        return input_boxes
 
 
 class crud_ops():
