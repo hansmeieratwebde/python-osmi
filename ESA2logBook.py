@@ -60,6 +60,24 @@ class MyWindow(Gtk.ApplicationWindow):
         self.grid= Gtk.Grid()
         self.grid.attach(view, 0, 0, 1, 1)
 
+        #add buttons
+        button_box=Gtk.Box(1
+                           )
+        submit_changes_button = Gtk.Button("Änderungen speichern")
+        submit_changes_button.connect("clicked",self.on_submit_changes_clicked)
+        button_box.pack_start(submit_changes_button,True,True, 10)
+
+        new_entry_button = Gtk.Button ("Neuer Eintrag")
+        new_entry_button.connect("clicked",self.on_new_entry_clicked)
+        button_box.pack_start(new_entry_button, True, True, 10)
+
+        delete_entry_button = Gtk.Button("Eintrag löschen")
+        delete_entry_button.connect("clicked",self.on_delete_entry_clicked)
+        button_box.pack_start(delete_entry_button, True, True, 10)
+
+        self.grid.attach(button_box,0,8,1,1)
+
+
 
         # attach the grid to the window
         self.add(self.grid)
@@ -69,7 +87,7 @@ class MyWindow(Gtk.ApplicationWindow):
         self.edit_form = self.init__input_form()
 
 
-
+#Eventhandler
 
     def on_changed(self, selection):
         # get the model and the iterator that points at the data in the model
@@ -78,6 +96,19 @@ class MyWindow(Gtk.ApplicationWindow):
         for i in range (len(self.edit_form)):
             self.edit_form[i].set_text(str(model[iter][i+1]))
         return True
+
+
+    def on_submit_changes_clicked(self, source):
+        print("submit")
+
+
+    def on_new_entry_clicked(self, source):
+        print("new entry")
+
+
+    def on_delete_entry_clicked(self,source):
+        print ("delete entry")
+
 
     def init__input_form(self):
         #adjust id to fit index starting at 0
