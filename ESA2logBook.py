@@ -27,7 +27,7 @@ class MyWindow(Gtk.ApplicationWindow):
         self.set_border_width(10)
 
         # prepare the model
-        listmodel = Gtk.ListStore(int, str, int, str, str, str)
+        listmodel = Gtk.ListStore(int, str, str, str, str)
         # get the data from db and read them into the listmodel
         db_content = self.db.read_table()
         for row in db_content:
@@ -54,48 +54,53 @@ class MyWindow(Gtk.ApplicationWindow):
             # when a row is selected, it emits a signal
         view.get_selection().connect("changed", self.on_changed)
 
-        # the label we use to show the selection
-        self.label = Gtk.Entry()
 
-        self.label.set_placeholder_text("")
 
         # a grid to attach the widgets
         self.grid= Gtk.Grid()
         self.grid.attach(view, 0, 0, 1, 1)
-        #self.grid.attach(self.label, 0, 1, 1, 1)
+
 
         # attach the grid to the window
         self.add(self.grid)
 
-        boxes=self.show_input_form(2)
-        self.grid.attach(boxes[1],1,3,1,1)
+
+        #add input form
+        self.edit_form = self.init__input_form()
+
+
 
 
     def on_changed(self, selection):
         # get the model and the iterator that points at the data in the model
         (model, iter) = selection.get_selected()
-        # set the label to a new value depending on the selection
-        input_boxes = self.show_input_form(2)
-        input_boxes[0].form.set_text("'Zack")
+        # set contents of entry form to selection content
+        for i in range (len(self.edit_form)):
+            self.edit_form[i].set_text(str(model[iter][i+1]))
         return True
 
-    def show_input_form(self,  id):
+    def init__input_form(self):
         #adjust id to fit index starting at 0
-        index = id -1
+        """
+        returns list with entry objects
+
+        :return: list
+        """
+        form_container =[]
+
         columns = self.db.get_column_names()
         table_content = self.db.read_table()
-        input_boxes = []
-        for i in range(1,len(columns)):
 
-            box= Gtk.Box(spacing=6)
+        #start at second column, id column is not editable
+        for i in range(1,len(columns)):
+            box = Gtk.Box(spacing=6)
             box.set_homogeneous(True)
             label = Gtk.Label(columns[i])
             box.pack_start(label, True, True, 0)
-            form = Gtk.Entry()
-            form.set_text(str(table_content[index][i]))
-            box.pack_start(form, True, True, 0)
-            input_boxes.append(box)
-        return input_boxes
+            form_container.append( Gtk.Entry())
+            box.pack_start(form_container[i-1], True, True, 0)
+            self.grid.attach(box, 0, 2 + i, 1, 1)
+        return form_container
 
 
 class crud_ops():
@@ -106,18 +111,18 @@ class crud_ops():
 
     __cursor = __connection.cursor()
     __cursor.execute("""CREATE TABLE IF NOT EXISTS my_log (
-    id INTEGER PRIMARY KEY, entry_name TEXT, entry_date DATE, entry_time TIME,entry_email TEXT,
+    id INTEGER PRIMARY KEY, entry_name TEXT,  entry_time TIME,entry_email TEXT,
    entry_comment TEXT)""")
 
     def create_entry(self, entry_data):
         self.__cursor.execute(
-            '''INSERT INTO my_log(entry_name,  entry_date, entry_time, entry_email, entry_comment) VALUES (?,?,?,?,?)''',
+            '''INSERT INTO my_log(entry_name,  entry_time, entry_email, entry_comment) VALUES (?,?,?,?)''',
             entry_data)
         self.__connection.commit()
 
     def update_entry(self, entry_data):
         self.__cursor.execute(
-            '''UPDATE my_log SET entry_name =:entry_name, entry_date = :entry_date, entry_time = :entry_time, entry_email= :entry_email, entry_comment = :entry_comment WHERE id=:entry_id''',
+            '''UPDATE my_log SET entry_name =:entry_name,  entry_time = :entry_time, entry_email= :entry_email, entry_comment = :entry_comment WHERE id=:entry_id''',
             entry_data)
 
 
@@ -149,8 +154,8 @@ class crud_ops():
         return names
 
 
-test_data = {'Sven', '150505', '12:20', 'scen@dfg.de',
-             'Hallo Welt'}
+test_data = ['Sven',  '12:20', 'scen@dfg.de',
+             'Hallo Welt']
 
 
 class MyApplication(Gtk.Application):
@@ -160,6 +165,7 @@ class MyApplication(Gtk.Application):
     def do_activate(self):
         # create db object and pass it to view
         db = crud_ops()
+        #db.create_entry(test_data)
         win = MyWindow(self, db)
         win.show_all()
 
