@@ -16,27 +16,17 @@ import sqlite3, sys
 
 
 class MyWindow(Gtk.ApplicationWindow):
-    def __init__(self, app, db):
-        """
-
-        :type db: crud_ops
-        """
-        self.db = db
-        Gtk.Window.__init__(self, title="ESA 2 / Logbook Sven Hinse", application=app)
-        self.set_default_size(600, 300)
-        self.set_border_width(10)
-
+    def init_treestore(self, db):
         # prepare the model
-        listmodel = Gtk.ListStore(int, str, str, str, str)
+        self.listmodel = Gtk.ListStore(int, str, str, str, str)
         # get the data from db and read them into the listmodel
         db_content = self.db.read_table()
         for row in db_content:
-            listmodel.append(row)
+            self.listmodel.append(row)
 
             # a treeview to see the data stored in the model
-        view = Gtk.TreeView(model=listmodel)
-
-        #get the column names
+        self.view = Gtk.TreeView(model=self.listmodel)
+        # get the column names
         columns = db.get_column_names()
         for i in range(len(columns)):
             # cellrenderer to render the text
@@ -48,34 +38,48 @@ class MyWindow(Gtk.ApplicationWindow):
             # the column is created
             col = Gtk.TreeViewColumn(columns[i], cell, text=i)
             # and it is appended to the treeview
-            view.append_column(col)
+            self.view.append_column(col)
 
 
             # when a row is selected, it emits a signal
-        view.get_selection().connect("changed", self.on_changed)
+        self.view.get_selection().connect("changed", self.on_changed)
+
+
+    def __init__(self, app, db):
+        """
+
+        :type db: crud_ops
+        """
+        self.db = db
+
+        Gtk.Window.__init__(self, title="ESA 2 / Logbook Sven Hinse", application=app)
+        self.set_default_size(600, 300)
+        self.set_border_width(10)
+          # a grid to attach the widgets
+        self.grid = Gtk.Grid()
+        self.init_treestore(db)
+        self.grid.attach(self.view, 0, 0, 1, 1)
 
 
 
-        # a grid to attach the widgets
-        self.grid= Gtk.Grid()
-        self.grid.attach(view, 0, 0, 1, 1)
 
-        #add buttons
-        button_box=Gtk.Box(1
-                           )
+
+
+        # add buttons
+        button_box = Gtk.Box(1)
         submit_changes_button = Gtk.Button("Änderungen speichern")
-        submit_changes_button.connect("clicked",self.on_submit_changes_clicked)
-        button_box.pack_start(submit_changes_button,True,True, 10)
+        submit_changes_button.connect("clicked", self.on_submit_changes_clicked)
+        button_box.pack_start(submit_changes_button, True, True, 10)
 
-        new_entry_button = Gtk.Button ("Neuer Eintrag")
-        new_entry_button.connect("clicked",self.on_new_entry_clicked)
+        new_entry_button = Gtk.Button("Neuer Eintrag")
+        new_entry_button.connect("clicked", self.on_new_entry_clicked)
         button_box.pack_start(new_entry_button, True, True, 10)
 
         delete_entry_button = Gtk.Button("Eintrag löschen")
-        delete_entry_button.connect("clicked",self.on_delete_entry_clicked)
+        delete_entry_button.connect("clicked", self.on_delete_entry_clicked)
         button_box.pack_start(delete_entry_button, True, True, 10)
 
-        self.grid.attach(button_box,0,8,1,1)
+        self.grid.attach(button_box, 0, 8, 1, 1)
 
 
 
@@ -87,51 +91,81 @@ class MyWindow(Gtk.ApplicationWindow):
         self.edit_form = self.init__input_form()
 
 
-#Eventhandler
+    # Eventhandler
 
     def on_changed(self, selection):
         # get the model and the iterator that points at the data in the model
         (model, iter) = selection.get_selected()
         # set contents of entry form to selection content
-        for i in range (len(self.edit_form)):
-            self.edit_form[i].set_text(str(model[iter][i+1]))
+        for i in range(len(self.edit_form)):
+            self.edit_form[i].set_text(str(model[iter][i + 1]))
         return True
 
 
     def on_submit_changes_clicked(self, source):
         print("submit")
+        id = self.get_id_of_selection()
+
+        # Get path pointing to selected row in list store
+        path = Gtk.TreePath(id - 1)
+        treeiter = self.listmodel.get_iter(path)
+
+        # read data from input fields and store them in a list object
+        new_entry_data = []
+        for i in range(len(self.edit_form)):
+            entry = self.edit_form[i].get_text()
+            new_entry_data.append(entry)
+            #start at i+1, id is not changeable
+            #update model of ListStore
+            self.listmodel.set_value(treeiter, i + 1, entry)
+
+        #write data to db
+        self.db.update_entry(new_entry_data, id)
 
 
     def on_new_entry_clicked(self, source):
         print("new entry")
 
 
-    def on_delete_entry_clicked(self,source):
-        print ("delete entry")
+    def on_delete_entry_clicked(self, source):
+        id = self.get_id_of_selection()
+        self.grid.remove_row(0)
+        self.init_treestore(self.db)
+        self.grid.attach(self.view, 0, 10, 1, 1)
+
 
 
     def init__input_form(self):
-        #adjust id to fit index starting at 0
+        # adjust id to fit index starting at 0
         """
         returns list with entry objects
 
         :return: list
         """
-        form_container =[]
+        form_container = []
 
         columns = self.db.get_column_names()
         table_content = self.db.read_table()
 
         #start at second column, id column is not editable
-        for i in range(1,len(columns)):
+        for i in range(1, len(columns)):
             box = Gtk.Box(spacing=6)
             box.set_homogeneous(True)
             label = Gtk.Label(columns[i])
             box.pack_start(label, True, True, 0)
-            form_container.append( Gtk.Entry())
-            box.pack_start(form_container[i-1], True, True, 0)
+            form_container.append(Gtk.Entry())
+            box.pack_start(form_container[i - 1], True, True, 0)
             self.grid.attach(box, 0, 2 + i, 1, 1)
         return form_container
+
+        #helper functions
+
+    def get_id_of_selection(self):
+        selection = self.view.get_selection()
+        (model, iter) = selection.get_selected()
+        # get entry_id
+        id = model[iter][0]
+        return id
 
 
 class crud_ops():
@@ -151,15 +185,22 @@ class crud_ops():
             entry_data)
         self.__connection.commit()
 
-    def update_entry(self, entry_data):
+    def update_entry(self, entry_data, id):
+        entry_data.append(id)
         self.__cursor.execute(
-            '''UPDATE my_log SET entry_name =:entry_name,  entry_time = :entry_time, entry_email= :entry_email, entry_comment = :entry_comment WHERE id=:entry_id''',
+            '''UPDATE my_log SET entry_name =?,  entry_time = ?, entry_email= ?,entry_comment = ? WHERE id=?''',
             entry_data)
+        self.__connection.commit()
 
 
     def read_entry(self, entry_id):
         self.__cursor.execute('''SELECT  * FROM my_log WHERE id = ?''', (entry_id,))
         return self.__cursor.fetchone()
+
+    def delete_entry (self, entry_id):
+        self.__cursor.execute('''DELETE  from my_log WHERE id = ?''', (entry_id,))
+        self.__connection.commit()
+
 
     def drop_table(self):
         self.__cursor.execute('''DROP TABLE my_log''')
@@ -185,7 +226,7 @@ class crud_ops():
         return names
 
 
-test_data = ['Sven',  '12:20', 'scen@dfg.de',
+test_data = ['Sven', '12:20', 'scen@dfg.de',
              'Hallo Welt']
 
 
@@ -196,7 +237,7 @@ class MyApplication(Gtk.Application):
     def do_activate(self):
         # create db object and pass it to view
         db = crud_ops()
-        #db.create_entry(test_data)
+        # db.create_entry(test_data)
         win = MyWindow(self, db)
         win.show_all()
 
