@@ -16,33 +16,7 @@ import sqlite3, sys
 
 
 class MyWindow(Gtk.ApplicationWindow):
-    def init_treestore(self, db):
-        # prepare the model
-        self.listmodel = Gtk.ListStore(int, str, str, str, str)
-        # get the data from db and read them into the listmodel
-        db_content = self.db.read_table()
-        for row in db_content:
-            self.listmodel.append(row)
 
-            # a treeview to see the data stored in the model
-        self.view = Gtk.TreeView(model=self.listmodel)
-        # get the column names
-        columns = db.get_column_names()
-        for i in range(len(columns)):
-            # cellrenderer to render the text
-            cell = Gtk.CellRendererText()
-            # the text in the first column should be in boldface
-            if i == 0:
-                cell.props.weight_set = True
-                cell.props.weight = Pango.Weight.BOLD
-            # the column is created
-            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
-            # and it is appended to the treeview
-            self.view.append_column(col)
-
-
-            # when a row is selected, it emits a signal
-        self.view.get_selection().connect("changed", self.on_changed)
 
 
     def __init__(self, app, db):
@@ -55,15 +29,10 @@ class MyWindow(Gtk.ApplicationWindow):
         Gtk.Window.__init__(self, title="ESA 2 / Logbook Sven Hinse", application=app)
         self.set_default_size(600, 300)
         self.set_border_width(10)
-          # a grid to attach the widgets
+
         self.grid = Gtk.Grid()
         self.init_treestore(db)
         self.grid.attach(self.view, 0, 0, 1, 1)
-
-
-
-
-
 
         # add buttons
         button_box = Gtk.Box(1)
@@ -71,7 +40,7 @@ class MyWindow(Gtk.ApplicationWindow):
         submit_changes_button.connect("clicked", self.on_submit_changes_clicked)
         button_box.pack_start(submit_changes_button, True, True, 10)
 
-        new_entry_button = Gtk.Button("Neuer Eintrag")
+        new_entry_button = Gtk.Button("Als neuen Eintrag speichern")
         new_entry_button.connect("clicked", self.on_new_entry_clicked)
         button_box.pack_start(new_entry_button, True, True, 10)
 
@@ -97,13 +66,13 @@ class MyWindow(Gtk.ApplicationWindow):
         # get the model and the iterator that points at the data in the model
         (model, iter) = selection.get_selected()
         # set contents of entry form to selection content
-        for i in range(len(self.edit_form)):
-            self.edit_form[i].set_text(str(model[iter][i + 1]))
-        return True
+        if iter is not None:
+            for i in range(len(self.edit_form)):
+                self.edit_form[i].set_text(str(model[iter][i + 1]))
+            return True
 
 
     def on_submit_changes_clicked(self, source):
-        print("submit")
         id = self.get_id_of_selection()
 
         # Get path pointing to selected row in list store
@@ -124,16 +93,49 @@ class MyWindow(Gtk.ApplicationWindow):
 
 
     def on_new_entry_clicked(self, source):
-        print("new entry")
+        new_entry_data = []
+        for i in range(len(self.edit_form)):
+            entry = self.edit_form[i].get_text()
+            new_entry_data.append(entry)
+        self.db.create_entry(new_entry_data)
+        self.update_model()
+        self.clear_edit_form()
+
+
 
 
     def on_delete_entry_clicked(self, source):
         id = self.get_id_of_selection()
-        self.grid.remove_row(0)
-        self.init_treestore(self.db)
-        self.grid.attach(self.view, 0, 10, 1, 1)
+        self.db.delete_entry(id)
+        self.update_model()
+        self.clear_edit_form()
 
 
+
+
+
+    #init functions
+    def init_treestore(self, db):
+        self.listmodel = Gtk.ListStore(int, str, str, str, str)
+        self.update_model()
+        self.view = Gtk.TreeView(model=self.listmodel)
+        # get the column names
+        columns = db.get_column_names()
+        for i in range(len(columns)):
+            # cellrenderer to render the text
+            cell = Gtk.CellRendererText()
+            # the text in the first column should be in boldface
+            if i == 0:
+                cell.props.weight_set = True
+                cell.props.weight = Pango.Weight.BOLD
+            # the column is created
+            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            # and it is appended to the treeview
+            self.view.append_column(col)
+
+
+            # when a row is selected, it emits a signal
+        self.view.get_selection().connect("changed", self.on_changed)
 
     def init__input_form(self):
         # adjust id to fit index starting at 0
@@ -158,7 +160,20 @@ class MyWindow(Gtk.ApplicationWindow):
             self.grid.attach(box, 0, 2 + i, 1, 1)
         return form_container
 
-        #helper functions
+
+
+
+
+    #helper functions
+
+    def update_model(self):
+        #clears the model and rereads data from db
+
+        self.listmodel.clear()
+
+        db_content = self.db.read_table()
+        for row in db_content:
+            self.listmodel.append(row)
 
     def get_id_of_selection(self):
         selection = self.view.get_selection()
@@ -167,6 +182,9 @@ class MyWindow(Gtk.ApplicationWindow):
         id = model[iter][0]
         return id
 
+    def clear_edit_form(self):
+        for i in range(len(self.edit_form)):
+            self.edit_form[i].set_text("")
 
 class crud_ops():
     def __init__(self):
@@ -209,10 +227,8 @@ class crud_ops():
         self.__cursor.execute('''SELECT * FROM my_log''')
         all_rows = self.__cursor.fetchall()
 
-        for row in all_rows:
-            # row[0] returns the first column in the query (name), row[1] returns email column.
-            print('{0} : {1}, {2}'.format(row[0], row[1], row[2]))
-            return all_rows
+
+        return all_rows
 
     def get_column_names(self):
         """
