@@ -1,5 +1,7 @@
-# __author__ = 'S Hinse'
 # -*- coding: utf-8 -*-
+#  __author__ = 'Sven  Hinse'
+#ESA 2, Gtk+3+ Logbook
+
 
 # Erstellen Sie ein Logbuch mit PyGTK, über das bestehende Log-Einträge gelesen und neue Log-Einträge geschrieben werden können.
 # Die Daten sind persistent in einer relationalen Datenbank (sqlite) zu speichern.
@@ -12,7 +14,7 @@
 
 from gi.repository import Gtk, Pango
 
-import sqlite3, sys
+import sqlite3, sys, os
 
 
 class MyWindow(Gtk.ApplicationWindow):
@@ -74,8 +76,11 @@ class MyWindow(Gtk.ApplicationWindow):
 
     def on_submit_changes_clicked(self, source):
         id = self.get_id_of_selection()
+    #return if db is empty and no selection possible
+        if id == -1:
+            return
 
-        # Get path pointing to selected row in list store
+        # Get path pointing to selected row in list store, ListStore starts counting at 0, so we have to use "id-1"
         path = Gtk.TreePath(id - 1)
         treeiter = self.listmodel.get_iter(path)
 
@@ -116,19 +121,26 @@ class MyWindow(Gtk.ApplicationWindow):
 
     #init functions
     def init_treestore(self, db):
+        """
+        inits the list and adds it to the main window
+
+        :param db:
+        """
         self.listmodel = Gtk.ListStore(int, str, str, str, str)
+        #read data from db
         self.update_model()
+        #create view
         self.view = Gtk.TreeView(model=self.listmodel)
         # get the column names
         columns = db.get_column_names()
         for i in range(len(columns)):
-            # cellrenderer to render the text
+
             cell = Gtk.CellRendererText()
             # the text in the first column should be in boldface
             if i == 0:
                 cell.props.weight_set = True
                 cell.props.weight = Pango.Weight.BOLD
-            # the column is created
+            # the column is created and the column name is inserted
             col = Gtk.TreeViewColumn(columns[i], cell, text=i)
             # and it is appended to the treeview
             self.view.append_column(col)
@@ -138,21 +150,22 @@ class MyWindow(Gtk.ApplicationWindow):
         self.view.get_selection().connect("changed", self.on_changed)
 
     def init__input_form(self):
-        # adjust id to fit index starting at 0
         """
-        returns list with entry objects
+        creates the form for editing entries
+        entry elements are packed in aGtk.Box and added to the grid
+        returns list with entry form objects
 
         :return: list
         """
         form_container = []
 
         columns = self.db.get_column_names()
-        table_content = self.db.read_table()
 
         #start at second column, id column is not editable
         for i in range(1, len(columns)):
             box = Gtk.Box(spacing=6)
             box.set_homogeneous(True)
+            #set column names as label text
             label = Gtk.Label(columns[i])
             box.pack_start(label, True, True, 0)
             form_container.append(Gtk.Entry())
@@ -176,11 +189,18 @@ class MyWindow(Gtk.ApplicationWindow):
             self.listmodel.append(row)
 
     def get_id_of_selection(self):
+        """
+        returns id of selected row, -1 if no row is available
+        :rtype : int
+
+        """
         selection = self.view.get_selection()
         (model, iter) = selection.get_selected()
-        # get entry_id
-        id = model[iter][0]
-        return id
+        if iter is not None:
+            # get entry_id
+            id = int(model[iter][0])
+            return id
+        return -1
 
     def clear_edit_form(self):
         for i in range(len(self.edit_form)):
@@ -242,8 +262,7 @@ class crud_ops():
         return names
 
 
-test_data = ['Sven', '12:20', 'scen@dfg.de',
-             'Hallo Welt']
+
 
 
 class MyApplication(Gtk.Application):
@@ -253,7 +272,6 @@ class MyApplication(Gtk.Application):
     def do_activate(self):
         # create db object and pass it to view
         db = crud_ops()
-        # db.create_entry(test_data)
         win = MyWindow(self, db)
         win.show_all()
 
