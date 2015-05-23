@@ -12,9 +12,10 @@
 # Als Datenfelder sollten Sie mind. Name, Uhrzeit, Email und Kommentar haben.
 
 
-from gi.repository import Gtk, Pango
+import sqlite3
+import sys
 
-import sqlite3, sys, os
+from gi.repository import Gtk, Pango
 
 
 class MyWindow(Gtk.ApplicationWindow):
@@ -88,7 +89,8 @@ class MyWindow(Gtk.ApplicationWindow):
         # read data from input fields and store them in a list object
         new_entry_data = []
         for i in range(len(self.edit_form)):
-            entry = self.edit_form[i].get_text()
+            entry =  self.edit_form[i].get_text().decode('utf-8')
+
             new_entry_data.append(entry)
 
         #write data to db
@@ -102,7 +104,7 @@ class MyWindow(Gtk.ApplicationWindow):
     def on_new_entry_clicked(self, source):
         new_entry_data = []
         for i in range(len(self.edit_form)):
-            entry = self.edit_form[i].get_text()
+            entry =  (self.edit_form[i].get_text()).decode('utf-8')
             new_entry_data.append(entry)
         self.db.create_entry(new_entry_data)
         self.update_model()
@@ -216,7 +218,7 @@ class crud_ops():
 
     __cursor = __connection.cursor()
     __cursor.execute("""CREATE TABLE IF NOT EXISTS my_log (
-    id INTEGER PRIMARY KEY, entry_name TEXT,  entry_time TIME,entry_email TEXT,
+    id INTEGER PRIMARY KEY, entry_name TEXT,  entry_time TEXT,entry_email TEXT,
    entry_comment TEXT)""")
 
     def create_entry(self, entry_data):
