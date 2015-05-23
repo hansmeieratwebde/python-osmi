@@ -89,7 +89,13 @@ class MyWindow(Gtk.ApplicationWindow):
         # read data from input fields and store them in a list object
         new_entry_data = []
         for i in range(len(self.edit_form)):
-            entry =  self.edit_form[i].get_text().decode('utf-8')
+         #in python 3 is unicode standard, so we have to catch an AttributeError
+            try:
+                entry =  self.edit_form[i].get_text().decode('utf-8')
+            except AttributeError:
+                entry =  self.edit_form[i].get_text()
+
+
 
             new_entry_data.append(entry)
 
@@ -104,7 +110,12 @@ class MyWindow(Gtk.ApplicationWindow):
     def on_new_entry_clicked(self, source):
         new_entry_data = []
         for i in range(len(self.edit_form)):
-            entry =  (self.edit_form[i].get_text()).decode('utf-8')
+        #in python 3 is unicode standard, so we have to catch an AttributeError
+            try:
+                entry =  (self.edit_form[i].get_text()).decode('utf-8')
+            except AttributeError:
+                entry =  (self.edit_form[i].get_text())
+
             new_entry_data.append(entry)
         self.db.create_entry(new_entry_data)
         self.update_model()
