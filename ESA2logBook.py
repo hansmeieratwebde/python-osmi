@@ -81,20 +81,22 @@ class MyWindow(Gtk.ApplicationWindow):
             return
 
         # Get path pointing to selected row in list store, ListStore starts counting at 0, so we have to use "id-1"
-        path = Gtk.TreePath(id - 1)
-        treeiter = self.listmodel.get_iter(path)
+        selection = self.view.get_selection()
+        (model, iter) = selection.get_selected()
+
 
         # read data from input fields and store them in a list object
         new_entry_data = []
         for i in range(len(self.edit_form)):
             entry = self.edit_form[i].get_text()
             new_entry_data.append(entry)
-            #start at i+1, id is not changeable
-            #update model of ListStore
-            self.listmodel.set_value(treeiter, i + 1, entry)
 
         #write data to db
         self.db.update_entry(new_entry_data, id)
+
+        #update view
+        self.update_model()
+        self.clear_edit_form()
 
 
     def on_new_entry_clicked(self, source):
